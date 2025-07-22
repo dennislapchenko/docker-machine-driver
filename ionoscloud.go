@@ -44,7 +44,7 @@ const (
 	flagNicIps                 = "ionoscloud-nic-ips"
 	flagLanName                = "ionoscloud-lan-name"
 	flagVolumeAvailabilityZone = "ionoscloud-volume-availability-zone"
-	flagCloudInit              = "ionoscloud-cloud-init"
+	flagCloudInit              = "ionoscloud-cloud-config"
 	flagSSHInCloudInit         = "ionoscloud-ssh-in-cloud-init"
 	flagSSHUser                = "ionoscloud-ssh-user"
 	flagCloudInitB64           = "ionoscloud-cloud-init-b64"
@@ -79,6 +79,11 @@ const (
 	defaultSize                   = 10
 	defaultWaitForIpChangeTimeout = 600
 	driverName                    = "ionoscloud"
+	defaultCloudInit              = `
+#cloud-config
+runcmd:
+ - [ ls, -l, / ]
+	`
 )
 
 const (
@@ -375,6 +380,7 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			Name:   flagCloudInit,
 			EnvVar: extflag.KebabCaseToEnvVarCase(flagCloudInit),
+			Value:  defaultCloudInit,
 			Usage:  "The cloud-init configuration for the volume as a multi-line string",
 		},
 		mcnflag.StringFlag{
