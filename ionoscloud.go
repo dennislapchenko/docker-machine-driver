@@ -44,10 +44,10 @@ const (
 	flagNicIps                 = "ionoscloud-nic-ips"
 	flagLanName                = "ionoscloud-lan-name"
 	flagVolumeAvailabilityZone = "ionoscloud-volume-availability-zone"
-	flagCloudInit              = "ionoscloud-cloud-config"
+	flagCloudInit              = "ionoscloud-cloud-init"
 	flagSSHInCloudInit         = "ionoscloud-ssh-in-cloud-init"
 	flagSSHUser                = "ionoscloud-ssh-user"
-	flagCloudInitB64           = "ionoscloud-cloud-init-b64"
+	flagCloudInitB64           = "ionoscloud-cloud-config-b64"
 	flagWaitForIpChange        = "ionoscloud-wait-for-ip-change"
 	flagWaitForIpChangeTimeout = "ionoscloud-wait-for-ip-change-timeout"
 	flagNatId                  = "ionoscloud-nat-id"
@@ -79,11 +79,7 @@ const (
 	defaultSize                   = 10
 	defaultWaitForIpChangeTimeout = 600
 	driverName                    = "ionoscloud"
-	defaultCloudInit              = `
-#cloud-config
-runcmd:
- - [ ls, -l, / ]
-	`
+	defaultCloudInitB64           = "I2Nsb3VkLWNvbmZpZwpydW5jbWQ6CiAtIFsgbHMsIC1sLCAvIF0="
 )
 
 const (
@@ -380,12 +376,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			Name:   flagCloudInit,
 			EnvVar: extflag.KebabCaseToEnvVarCase(flagCloudInit),
-			Value:  defaultCloudInit,
 			Usage:  "The cloud-init configuration for the volume as a multi-line string",
 		},
 		mcnflag.StringFlag{
 			Name:   flagCloudInitB64,
 			EnvVar: extflag.KebabCaseToEnvVarCase(flagCloudInitB64),
+			Value:  defaultCloudInitB64,
 			Usage:  "The cloud-init configuration for the volume as base64 encoded string",
 		},
 		mcnflag.StringFlag{
@@ -622,7 +618,7 @@ func getPropertyWithFallback[T comparable](p1 T, p2 T, empty T) T {
 func (d *Driver) Create() (err error) {
 	err = d.CreateIonosMachine()
 	if err != nil {
-		log.Warn(rollingBackNotice)
+		log.Warnf("%s : %v", rollingBackNotice, err)
 		if removeErr := d.Remove(); removeErr != nil {
 			return fmt.Errorf("failed to create machine due to error: %w\n Removing created resources: %v", err, removeErr)
 		}
