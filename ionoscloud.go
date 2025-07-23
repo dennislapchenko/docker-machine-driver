@@ -79,7 +79,7 @@ const (
 	defaultSize                   = 10
 	defaultWaitForIpChangeTimeout = 600
 	driverName                    = "ionoscloud"
-	defaultCloudInitB64           = "I2Nsb3VkLWNvbmZpZwpydW5jbWQ6CiAtIFsgbHMsIC1sLCAvIF0="
+	// defaultCloudInitB64           = "I2Nsb3VkLWNvbmZpZwpydW5jbWQ6CiAtIFsgbHMsIC1sLCAvIF0="
 )
 
 const (
@@ -381,8 +381,8 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			Name:   flagCloudInitB64,
 			EnvVar: extflag.KebabCaseToEnvVarCase(flagCloudInitB64),
-			Value:  defaultCloudInitB64,
-			Usage:  "The cloud-init configuration for the volume as base64 encoded string",
+			// Value:  defaultCloudInitB64,
+			Usage: "The cloud-init configuration for the volume as base64 encoded string",
 		},
 		mcnflag.StringFlag{
 			Name:   flagSSHUser,
