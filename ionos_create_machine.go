@@ -3,6 +3,7 @@ package ionoscloud
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"strconv"
 	"strings"
@@ -81,8 +82,21 @@ func (d *Driver) CreateLanIfNeeded() (err error) {
 	return nil
 }
 
+func getRancherCloudInit(path string) (string, error) {
+	cloudinit, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("failed to read ranchers cloud init", err)
+	}
+	return string(cloudinit), nil
+}
+
 func (d *Driver) GetFinalUserData() (userdata string, err error) {
-	log.Infof("rancher cloud init:\n %s", d.RancherCloudInit)
+	rancherCloudInit, err := getRancherCloudInit(d.RancherCloudInit)
+	if err != nil {
+		log.Errorf("failed to get rancher cloud init: %v", err)
+	} else {
+		log.Infof("rancher cloud init:\n %s", rancherCloudInit)
+	}
 
 	log.Infof("Userdata at the start of final:\n %s", userdata)
 	givenB64CloudInit, _ := base64.StdEncoding.DecodeString(d.CloudInitB64)
