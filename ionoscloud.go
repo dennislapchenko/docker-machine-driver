@@ -79,7 +79,7 @@ const (
 	defaultSize                   = 10
 	defaultWaitForIpChangeTimeout = 600
 	driverName                    = "ionoscloud"
-	// defaultCloudInitB64           = "I2Nsb3VkLWNvbmZpZwpydW5jbWQ6CiAtIFsgbHMsIC1sLCAvIF0="
+	defaultCloudInitB64           = "I2Nsb3VkLWNvbmZpZwpydW5jbWQ6CiAtIFsgbHMsIC1sLCAvIF0="
 )
 
 const (
@@ -435,7 +435,7 @@ func (d *Driver) SetConfigFromFlags(opts drivers.DriverOptions) error {
 	d.CloudInit = opts.String(flagCloudInit)
 	d.SSHUser = opts.String(flagSSHUser)
 	d.SSHInCloudInit = opts.Bool(flagSSHInCloudInit)
-	d.CloudInitB64 = opts.String(flagCloudInitB64)
+	d.CloudInitB64 = defaultCloudInitB64 //opts.String(flagCloudInitB64)
 	d.PrivateLan = opts.Bool(flagPrivateLan)
 	d.AdditionalLans = opts.StringSlice(flagAdditionalLans)
 
