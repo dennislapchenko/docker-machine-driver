@@ -114,6 +114,7 @@ func (d *Driver) CreateIonosServer() (err error) {
 	if err != nil {
 		return fmt.Errorf("error with user data: %w", err)
 	}
+	log.Infof("Final userdata:\n %s", ud)
 
 	// Volume
 	sshKeys := &[]string{}
