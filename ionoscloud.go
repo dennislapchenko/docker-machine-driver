@@ -623,7 +623,6 @@ func getPropertyWithFallback[T comparable](p1 T, p2 T, empty T) T {
 
 // Create creates the machine.
 func (d *Driver) Create() (err error) {
-	log.Infof("userdata from rancher: %v", d.CloudInit)
 	err = d.CreateIonosMachine()
 	if err != nil {
 		log.Warnf("%s : %v", rollingBackNotice, err)

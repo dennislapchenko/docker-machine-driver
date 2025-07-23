@@ -85,7 +85,7 @@ func (d *Driver) CreateLanIfNeeded() (err error) {
 func getRancherCloudInit(path string) (string, error) {
 	cloudinit, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to read ranchers cloud init", err)
+		return "", fmt.Errorf("failed to read ranchers cloud init %v", err)
 	}
 	return string(cloudinit), nil
 }
@@ -101,7 +101,8 @@ func (d *Driver) GetFinalUserData() (userdata string, err error) {
 	log.Infof("Userdata at the start of final:\n %s", userdata)
 	givenB64CloudInit, _ := base64.StdEncoding.DecodeString(d.CloudInitB64)
 	log.Infof("Userdata decoded from b64:\n %s", givenB64CloudInit)
-	if ud := getPropertyWithFallback(string(givenB64CloudInit), d.CloudInit, ""); ud != "" {
+	if ud := getPropertyWithFallback(rancherCloudInit, d.CloudInit, ""); ud != "" {
+		// if ud := getPropertyWithFallback(string(givenB64CloudInit), d.CloudInit, ""); ud != "" {
 		// Provided B64 User Data has priority over UI provided User Data
 		d.CloudInit = ud
 		log.Infof("Userdata from getPRopertyWithFallback:\n %s", ud)
@@ -119,6 +120,10 @@ func (d *Driver) GetFinalUserData() (userdata string, err error) {
 	if err != nil {
 		return "", errwrap.Wrapf("failed after final attempt to update cloudinit", err)
 	}
+
+	// d.CloudInit, err = d.client().UpdateCloudInitFile(
+	// 	d.CloudInit, "runcmd", []interface{}{commonUser}, false, "append")
+
 	ud := base64.StdEncoding.EncodeToString([]byte(d.CloudInit))
 	return ud, nil
 }
