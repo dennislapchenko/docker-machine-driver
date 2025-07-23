@@ -385,11 +385,10 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			// Value:  defaultCloudInitB64,
 			Usage: "The cloud-init configuration for the volume as base64 encoded string",
 		},
-		},
 		mcnflag.StringFlag{
 			Name:   "rancher-cloud-config",
 			EnvVar: extflag.KebabCaseToEnvVarCase("rancher-cloud-config"),
-			Usage: "placeholder for rancher machine process to populate with rke2 install cloud-init",
+			Usage:  "placeholder for rancher machine process to populate with rke2 install cloud-init",
 		},
 		mcnflag.StringFlag{
 			Name:   flagSSHUser,
