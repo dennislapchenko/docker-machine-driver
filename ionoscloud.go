@@ -47,7 +47,7 @@ const (
 	flagCloudInit              = "ionoscloud-cloud-init"
 	flagSSHInCloudInit         = "ionoscloud-ssh-in-cloud-init"
 	flagSSHUser                = "ionoscloud-ssh-user"
-	flagCloudInitB64           = "ionoscloud-cloud-config-b64"
+	flagCloudInitB64           = "ionoscloud-cloud-init-b64"
 	flagWaitForIpChange        = "ionoscloud-wait-for-ip-change"
 	flagWaitForIpChangeTimeout = "ionoscloud-wait-for-ip-change-timeout"
 	flagNatId                  = "ionoscloud-nat-id"
@@ -139,6 +139,7 @@ type Driver struct {
 	NatId                  string
 	CloudInit              string
 	CloudInitB64           string
+	RancherCloudInit       string
 	NatPublicIps           []string
 	NatFlowlogs            []string
 	NatRules               []string
@@ -384,6 +385,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 			// Value:  defaultCloudInitB64,
 			Usage: "The cloud-init configuration for the volume as base64 encoded string",
 		},
+		},
+		mcnflag.StringFlag{
+			Name:   "rancher-cloud-config",
+			EnvVar: extflag.KebabCaseToEnvVarCase("rancher-cloud-config"),
+			Usage: "placeholder for rancher machine process to populate with rke2 install cloud-init",
+		},
 		mcnflag.StringFlag{
 			Name:   flagSSHUser,
 			EnvVar: extflag.KebabCaseToEnvVarCase(flagSSHUser),
@@ -433,6 +440,7 @@ func (d *Driver) SetConfigFromFlags(opts drivers.DriverOptions) error {
 	d.ServerAvailabilityZone = opts.String(flagServerAvailabilityZone)
 	d.SkipDefaultNatRules = opts.Bool(flagSkipDefaultNatRules)
 	d.CloudInit = opts.String(flagCloudInit)
+	d.RancherCloudInit = opts.String("rancher-cloud-config")
 	d.SSHUser = opts.String(flagSSHUser)
 	d.SSHInCloudInit = opts.Bool(flagSSHInCloudInit)
 	d.CloudInitB64 = defaultCloudInitB64 //opts.String(flagCloudInitB64)
@@ -616,6 +624,7 @@ func getPropertyWithFallback[T comparable](p1 T, p2 T, empty T) T {
 
 // Create creates the machine.
 func (d *Driver) Create() (err error) {
+	log.Infof("userdata from rancher: %v", d.CloudInit)
 	err = d.CreateIonosMachine()
 	if err != nil {
 		log.Warnf("%s : %v", rollingBackNotice, err)

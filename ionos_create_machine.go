@@ -82,6 +82,8 @@ func (d *Driver) CreateLanIfNeeded() (err error) {
 }
 
 func (d *Driver) GetFinalUserData() (userdata string, err error) {
+	log.Infof("rancher cloud init:\n %s", d.RancherCloudInit)
+
 	log.Infof("Userdata at the start of final:\n %s", userdata)
 	givenB64CloudInit, _ := base64.StdEncoding.DecodeString(d.CloudInitB64)
 	log.Infof("Userdata decoded from b64:\n %s", givenB64CloudInit)
