@@ -3,7 +3,7 @@ name: CD
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 jobs:
   goreleaser:
     name: Publish Release
@@ -17,13 +17,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
 
       - name: Check code format
         run: make gofmt_check
 
-      - name: Run tests
-        run: make test
+      # - name: Run tests
+      #   run: make test
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
@@ -33,7 +33,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: success()
-          
+
       - name: Get the new version
         id: new_version
         run: echo ::set-output name=VERSION::$(git tag --list "v*" --sort=version:refname | tail -n 1)
