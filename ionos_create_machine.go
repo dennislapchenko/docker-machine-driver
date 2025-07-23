@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/errwrap"
 	"github.com/ionos-cloud/docker-machine-driver/internal/pointer"
 	sdkgo "github.com/ionos-cloud/sdk-go/v6"
 	"github.com/rancher/machine/libmachine/log"
@@ -81,23 +82,26 @@ func (d *Driver) CreateLanIfNeeded() (err error) {
 }
 
 func (d *Driver) GetFinalUserData() (userdata string, err error) {
+	log.Infof("Userdata at the start of final:\n %s", userdata)
 	givenB64CloudInit, _ := base64.StdEncoding.DecodeString(d.CloudInitB64)
+	log.Infof("Userdata decoded from b64:\n %s", givenB64CloudInit)
 	if ud := getPropertyWithFallback(string(givenB64CloudInit), d.CloudInit, ""); ud != "" {
 		// Provided B64 User Data has priority over UI provided User Data
 		d.CloudInit = ud
+		log.Infof("Userdata from getPRopertyWithFallback:\n %s", ud)
 	}
 
 	if d.SSHUser != "root" || d.SSHInCloudInit {
 		d.CloudInit, err = d.addSSHUserToYaml()
 		if err != nil {
-			return "", err
+			return "", errwrap.Wrapf("failed to add ssh user to yaml", err)
 		}
 	}
 	d.CloudInit, err = d.client().UpdateCloudInitFile(
 		d.CloudInit, "hostname", []interface{}{d.MachineName}, true, "skip",
 	)
 	if err != nil {
-		return "", err
+		return "", errwrap.Wrapf("failed after final attempt to update cloudinit", err)
 	}
 	ud := base64.StdEncoding.EncodeToString([]byte(d.CloudInit))
 	return ud, nil
