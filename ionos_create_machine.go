@@ -3,15 +3,15 @@ package ionoscloud
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 
-	"github.com/hashicorp/errwrap"
 	"github.com/ionos-cloud/docker-machine-driver/internal/pointer"
 	sdkgo "github.com/ionos-cloud/sdk-go/v6"
 	"github.com/rancher/machine/libmachine/log"
+	"gopkg.in/yaml.v3"
 )
 
 func (d *Driver) getCubeTemplateUuid() (string, error) {
@@ -82,50 +82,76 @@ func (d *Driver) CreateLanIfNeeded() (err error) {
 	return nil
 }
 
-func getRancherCloudInit(path string) (string, error) {
-	cloudinit, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", fmt.Errorf("failed to read ranchers cloud init %v", err)
-	}
-	return string(cloudinit), nil
-}
-
 func (d *Driver) GetFinalUserData() (userdata string, err error) {
-	rancherCloudInit, err := getRancherCloudInit(d.RancherCloudInit)
-	if err != nil {
-		log.Errorf("failed to get rancher cloud init: %v", err)
-	} else {
-		log.Infof("rancher cloud init:\n %s", rancherCloudInit)
-	}
-
-	log.Infof("Userdata at the start of final:\n %s", userdata)
 	givenB64CloudInit, _ := base64.StdEncoding.DecodeString(d.CloudInitB64)
-	log.Infof("Userdata decoded from b64:\n %s", givenB64CloudInit)
-	if ud := getPropertyWithFallback(rancherCloudInit, d.CloudInit, ""); ud != "" {
-		// if ud := getPropertyWithFallback(string(givenB64CloudInit), d.CloudInit, ""); ud != "" {
+	if ud := getPropertyWithFallback(string(givenB64CloudInit), d.CloudInit, ""); ud != "" {
 		// Provided B64 User Data has priority over UI provided User Data
 		d.CloudInit = ud
-		log.Infof("Userdata from getPRopertyWithFallback:\n %s", ud)
 	}
 
 	if d.SSHUser != "root" || d.SSHInCloudInit {
 		d.CloudInit, err = d.addSSHUserToYaml()
 		if err != nil {
-			return "", errwrap.Wrapf("failed to add ssh user to yaml", err)
+			return "", fmt.Errorf("failed to add ssh user to yaml: %w", err)
 		}
 	}
 	d.CloudInit, err = d.client().UpdateCloudInitFile(
 		d.CloudInit, "hostname", []interface{}{d.MachineName}, true, "skip",
 	)
 	if err != nil {
-		return "", errwrap.Wrapf("failed after final attempt to update cloudinit", err)
+		return "", err
 	}
 
-	// d.CloudInit, err = d.client().UpdateCloudInitFile(
-	// 	d.CloudInit, "runcmd", []interface{}{commonUser}, false, "append")
+	if d.RKEProvisionUserData != "" {
+		d.CloudInit, err = d.appendRKEProvisionToCloudInit()
+		if err != nil {
+			return "", fmt.Errorf("failed to append RKE provision to cloud init: %w", err)
+		}
+	}
 
 	ud := base64.StdEncoding.EncodeToString([]byte(d.CloudInit))
 	return ud, nil
+}
+
+func (d *Driver) appendRKEProvisionToCloudInit() (string, error) {
+	var (
+		finalCf string
+		err     error
+	)
+	userdata, err := os.ReadFile(d.RKEProvisionUserData)
+	if err != nil {
+		return "", fmt.Errorf("failed to read rke provision user data: %w", err)
+	}
+
+	var cf map[string]interface{}
+	err = yaml.Unmarshal([]byte(userdata), &cf)
+	if err != nil {
+		return "", fmt.Errorf("failed to unmarshal RKE provision data: %w", err)
+	}
+
+	if runcmd, exists := cf["runcmd"]; exists {
+		if runcmdArray, ok := runcmd.([]interface{}); ok {
+			finalCf, err = d.client().UpdateCloudInitFile(
+				d.CloudInit, "runcmd", runcmdArray, false, "append",
+			)
+			if err != nil {
+				return "", fmt.Errorf("failed to append rke provision runcmd to cloud init: %w", err)
+			}
+		}
+	}
+
+	if writeFiles, exists := cf["write_files"]; exists {
+		if writeFilesArray, ok := writeFiles.([]interface{}); ok {
+			finalCf, err = d.client().UpdateCloudInitFile(
+				finalCf, "write_files", writeFilesArray, false, "append",
+			)
+			if err != nil {
+				return "", fmt.Errorf("failed to append write_files to cloud init: %w", err)
+			}
+		}
+	}
+
+	return finalCf, nil
 }
 
 func (d *Driver) CreateIonosServer() (err error) {

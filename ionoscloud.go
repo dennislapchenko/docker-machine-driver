@@ -60,6 +60,7 @@ const (
 	flagPrivateLan             = "ionoscloud-private-lan"
 	flagAdditionalLans         = "ionoscloud-additional-lans"
 	flagCreateNat              = "ionoscloud-create-nat"
+	flagRKEProvisionUserData   = "rancher-provision-user-data"
 	// ---
 )
 
@@ -79,7 +80,6 @@ const (
 	defaultSize                   = 10
 	defaultWaitForIpChangeTimeout = 600
 	driverName                    = "ionoscloud"
-	defaultCloudInitB64           = "I2Nsb3VkLWNvbmZpZwpydW5jbWQ6CiAtIFsgbHMsIC1sLCAvIF0="
 )
 
 const (
@@ -139,7 +139,7 @@ type Driver struct {
 	NatId                  string
 	CloudInit              string
 	CloudInitB64           string
-	RancherCloudInit       string
+	RKEProvisionUserData   string
 	NatPublicIps           []string
 	NatFlowlogs            []string
 	NatRules               []string
@@ -382,13 +382,12 @@ func (d *Driver) GetCreateFlags() []mcnflag.Flag {
 		mcnflag.StringFlag{
 			Name:   flagCloudInitB64,
 			EnvVar: extflag.KebabCaseToEnvVarCase(flagCloudInitB64),
-			// Value:  defaultCloudInitB64,
-			Usage: "The cloud-init configuration for the volume as base64 encoded string",
+			Usage:  "The cloud-init configuration for the volume as base64 encoded string",
 		},
 		mcnflag.StringFlag{
-			Name:   "rancher-cloud-config",
-			EnvVar: extflag.KebabCaseToEnvVarCase("rancher-cloud-config"),
-			Usage:  "placeholder for rancher machine process to populate with rke2 install cloud-init",
+			Name:   flagRKEProvisionUserData,
+			EnvVar: extflag.KebabCaseToEnvVarCase(flagRKEProvisionUserData),
+			Usage:  "Placeholder flag for rancher machine creation flow to populate with rke2 install user-data instructions",
 		},
 		mcnflag.StringFlag{
 			Name:   flagSSHUser,
@@ -439,10 +438,10 @@ func (d *Driver) SetConfigFromFlags(opts drivers.DriverOptions) error {
 	d.ServerAvailabilityZone = opts.String(flagServerAvailabilityZone)
 	d.SkipDefaultNatRules = opts.Bool(flagSkipDefaultNatRules)
 	d.CloudInit = opts.String(flagCloudInit)
-	d.RancherCloudInit = opts.String("rancher-cloud-config")
+	d.RKEProvisionUserData = opts.String(flagRKEProvisionUserData)
 	d.SSHUser = opts.String(flagSSHUser)
 	d.SSHInCloudInit = opts.Bool(flagSSHInCloudInit)
-	d.CloudInitB64 = defaultCloudInitB64 //opts.String(flagCloudInitB64)
+	d.CloudInitB64 = opts.String(flagCloudInitB64)
 	d.PrivateLan = opts.Bool(flagPrivateLan)
 	d.AdditionalLans = opts.StringSlice(flagAdditionalLans)
 
